@@ -1,0 +1,3 @@
+[submodule "lib/UartDmaDriver"]
+	path = lib/UartDmaDriver
+	url = https://github.com/pierrejay/pico-freertos-UartDmaDriver
