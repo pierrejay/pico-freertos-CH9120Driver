@@ -30,8 +30,10 @@ else()
     message(STATUS "Building CH9120Driver as SUBDIRECTORY")
 endif()
 
-# Add UartDmaDriver dependency
-add_subdirectory(lib/UartDmaDriver)
+# Add UartDmaDriver dependency only if not already defined
+if(NOT TARGET UartDmaDriver)
+    add_subdirectory(lib/UartDmaDriver)
+endif()
 
 # CH9120Driver library (always built)
 add_library(CH9120Driver STATIC
