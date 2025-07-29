@@ -224,7 +224,7 @@ config.useDhcp = true;  // localIp will be ignored
 
 ### Error Handling
 
-The socket API functions return `0` on success and a negative `errno` value (`constexpr int`) on failure, compatible with standard Linux socket error codes. Those error codes are enumerated in the `SockErrno` namespace (`CH9120Errno.hpp`).
+The socket API functions return `0` on success and a negative `errno` value (`constexpr int`) on failure, compatible with standard Linux socket error codes. Those error codes are enumerated in the `CH9120Errno.hpp` file (due to some headers already defining `errno` codes as defines, we unfortunately cannot use constexpr or enums, so we just use raw defines as well).
 
 | `errno` Code      | Value | Meaning                               |
 | ----------------- | ----- | ------------------------------------- |

@@ -229,11 +229,11 @@ bool CH9120Driver::isOverflowed() const {
  * @return Result code
  */
 int CH9120Driver::connect(const NetworkConfig& config, TickType_t timeout) {
-    if (!_initialized) return -SockErrno::ENOTSOCK;
+    if (!_initialized) return -ENOTSOCK;
     
     // Validate this is client mode only
     if (config.mode != Mode::TCP_CLIENT && config.mode != Mode::UDP_CLIENT) {
-        return -SockErrno::EINVAL; // connect() only for client modes
+        return -EINVAL; // connect() only for client modes
     }
     
     // Setup socket
@@ -254,7 +254,7 @@ int CH9120Driver::connect(const NetworkConfig& config, TickType_t timeout) {
         while (!isConnected()) {
             uint32_t elapsed = to_ms_since_boot(get_absolute_time()) - startTime;
             if (elapsed >= timeoutMs) {
-                return -SockErrno::ETIMEDOUT; // Connection timeout
+                return -ETIMEDOUT; // Connection timeout
             }
             vTaskDelay(pdMS_TO_TICKS(CFG_CONNECT_CHECK_DELAY));
         }
@@ -272,7 +272,7 @@ int CH9120Driver::connect(const NetworkConfig& config, TickType_t timeout) {
  * @return Result code
  */
 int CH9120Driver::bind(const NetworkConfig& config) {
-    if (!_initialized) return -SockErrno::ENOTSOCK;
+    if (!_initialized) return -ENOTSOCK;
     
     // Setup socket (configure CH9120)
     int setupResult = setupSocket(config, pdMS_TO_TICKS(10000));
@@ -287,24 +287,24 @@ int CH9120Driver::bind(const NetworkConfig& config) {
  * @return Result code
  */
 int CH9120Driver::listen(int backlog) {
-    if (!_initialized) return -SockErrno::ENOTSOCK;
-    if (!_configured) return -SockErrno::EINVAL;
+    if (!_initialized) return -ENOTSOCK;
+    if (!_configured) return -EINVAL;
     
     // Validate we're in server mode
     if (_currentConfig.has_value()) {
         Mode currentMode = _currentConfig.value().mode;
         if (currentMode != Mode::TCP_SERVER && currentMode != Mode::UDP_SERVER) {
-            return -SockErrno::EINVAL; // listen() only for server modes
+            return -EINVAL; // listen() only for server modes
         }
     } else {
-        return -SockErrno::ENOTCONN;
+        return -ENOTCONN;
     }
     
     // Just start RX (socket already configured by bind())
-    if (getState() != STOPPED) return -SockErrno::EINVAL;
+    if (getState() != STOPPED) return -EINVAL;
     
     Lock guard(_drvMutex);
-    if (!guard.isLocked()) return -SockErrno::EBUSY;
+    if (!guard.isLocked()) return -EBUSY;
     
     Result startResult = startRxTxUnsafe();
     if (startResult != SUCCESS) {
@@ -321,19 +321,19 @@ int CH9120Driver::listen(int backlog) {
  * @return Result code
  */
 int CH9120Driver::accept(TickType_t timeout) {
-    if (!_initialized) return -SockErrno::ENOTSOCK;
-    if (!_configured) return -SockErrno::ENOTCONN;
-    if (getState() != RUN_OK) return -SockErrno::ENOTCONN;
+    if (!_initialized) return -ENOTSOCK;
+    if (!_configured) return -ENOTCONN;
+    if (getState() != RUN_OK) return -ENOTCONN;
     
     // Validate we're in server mode
     if (_currentConfig.has_value()) {
         Mode currentMode = _currentConfig.value().mode;
         if (currentMode != Mode::TCP_SERVER && currentMode != Mode::UDP_SERVER) {
             CH9120Debug::logf("Accept called on non-server socket");
-            return -SockErrno::EINVAL; // Not a server socket
+            return -EINVAL; // Not a server socket
         }
     } else {
-        return -SockErrno::ENOTCONN;
+        return -ENOTCONN;
     }
     
     // CH9120 handles TCP/IP stack - server already accepts connections after listen()
@@ -363,15 +363,15 @@ void CH9120Driver::close() {
  * @return Result code
  */
 int CH9120Driver::send(const uint8_t* data, size_t len, TickType_t timeout) {
-    if (!_initialized) return -SockErrno::ENOTSOCK;
-    if (!_configured) return -SockErrno::ENOTCONN;
-    if (getState() != RUN_OK) return -SockErrno::ENOTCONN;
-    if (!data) return -SockErrno::EFAULT;
+    if (!_initialized) return -ENOTSOCK;
+    if (!_configured) return -ENOTCONN;
+    if (getState() != RUN_OK) return -ENOTCONN;
+    if (!data) return -EFAULT;
     if (len == 0) return 0; // Nothing to send
     
     // Check message size limits
     if (len > UartDmaDriver::DMA_TX_BUFFER_SIZE) {
-        return -SockErrno::EMSGSIZE;
+        return -EMSGSIZE;
     }
     
     // Use UartDmaDriver for transmission
@@ -381,13 +381,13 @@ int CH9120Driver::send(const uint8_t* data, size_t len, TickType_t timeout) {
         case UartDmaDriver::SUCCESS:
             return (int)len; // Return bytes sent
         case UartDmaDriver::ERR_TX_BUSY:
-            return (timeout == 0) ? -SockErrno::EWOULDBLOCK : -SockErrno::ETIMEDOUT;
+            return (timeout == 0) ? -EWOULDBLOCK : -ETIMEDOUT;
         case UartDmaDriver::ERR_TX_OVERFLOW:
-            return -SockErrno::EMSGSIZE;
+            return -EMSGSIZE;
         case UartDmaDriver::ERR_STATE:
-            return -SockErrno::ENOTCONN;
+            return -ENOTCONN;
         default:
-            return -SockErrno::ENETDOWN;
+            return -ENETDOWN;
     }
 }
 
@@ -399,9 +399,9 @@ int CH9120Driver::send(const uint8_t* data, size_t len, TickType_t timeout) {
  * @return Result code
  */
 int CH9120Driver::recv(uint8_t* buffer, size_t maxLen, TickType_t timeout) {
-    if (!_initialized) return -SockErrno::ENOTSOCK;
-    if (!_configured) return -SockErrno::ENOTCONN;
-    if (!buffer) return -SockErrno::EFAULT;
+    if (!_initialized) return -ENOTSOCK;
+    if (!_configured) return -ENOTCONN;
+    if (!buffer) return -EFAULT;
     if (maxLen == 0) return 0; // Nothing to receive
     
     // Check if data is immediately available
@@ -426,11 +426,11 @@ int CH9120Driver::recv(uint8_t* buffer, size_t maxLen, TickType_t timeout) {
             }
         }
         if (event.type == UartDmaDriver::EVT_OVERFLOW) {
-            return -SockErrno::ENOBUFS; // Buffer overflow
+            return -ENOBUFS; // Buffer overflow
         }
     }
     
-    return -SockErrno::ETIMEDOUT; // Timeout waiting for data
+    return -ETIMEDOUT; // Timeout waiting for data
 }
 
 // ===================================================================================
@@ -605,14 +605,14 @@ void CH9120Driver::clearRxBuffer() {
 constexpr int CH9120Driver::resultToErrno(Result result) {
     switch (result) {
         case SUCCESS: return 0;
-        case ERR_INIT: return -SockErrno::ENOTSOCK;
-        case ERR_BUSY: return -SockErrno::EBUSY;
-        case ERR_CONFIG: return -SockErrno::EINVAL;
-        case ERR_TIMEOUT: return -SockErrno::ETIMEDOUT;
-        case ERR_UART: return -SockErrno::ENETDOWN;
-        case ERR_CONNECTION: return -SockErrno::ECONNREFUSED;
-        case ERR_STATE: return -SockErrno::EINVAL;
-        default: return -SockErrno::EINVAL;
+        case ERR_INIT: return -ENOTSOCK;
+        case ERR_BUSY: return -EBUSY;
+        case ERR_CONFIG: return -EINVAL;
+        case ERR_TIMEOUT: return -ETIMEDOUT;
+        case ERR_UART: return -ENETDOWN;
+        case ERR_CONNECTION: return -ECONNREFUSED;
+        case ERR_STATE: return -EINVAL;
+        default: return -EINVAL;
     }
 }
 
@@ -624,17 +624,17 @@ constexpr int CH9120Driver::resultToErrno(Result result) {
  */
 int CH9120Driver::setupSocket(const NetworkConfig& config, TickType_t timeout) {
     // Validate config
-    if (config.validate() != SUCCESS) return -SockErrno::EINVAL;
+    if (config.validate() != SUCCESS) return -EINVAL;
     
     // Stop & configure driver under mutex
     Lock guard(_drvMutex, timeout);
-    if (!guard.isLocked()) { return -SockErrno::EBUSY; } // Driver is busy
+    if (!guard.isLocked()) { return -EBUSY; } // Driver is busy
             
     // Check if already running with same config
     if (getState() == RUN_OK && 
         _currentConfig.has_value() && _currentConfig.value() == config) {
         CH9120Debug::logf("Already configured with same config");
-        return -SockErrno::EISCONN; // Already running with same config
+        return -EISCONN; // Already running with same config
     }
     
     // Stop if running with different config

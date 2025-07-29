@@ -522,7 +522,7 @@ void test_3_1_connection_timeout() {
     }
     
     // Check for expected timeout error (ETIMEDOUT = -116)
-    if (result != -116) {  // -SockErrno::ETIMEDOUT
+    if (result != -116) {  // -ETIMEDOUT
         printf("Got error code: %d (expected -116 for ETIMEDOUT)\n", result);
         g_results.record_fail(test_name, "Unexpected error code");
         return;
@@ -711,7 +711,7 @@ void test_4_3_duplicate_connection() {
     
     // Second connection with same config should return EISCONN (-127)
     result = client_socket.connect(config, TEST_CONNECT_TIMEOUT);
-    if (result != -127) {  // -SockErrno::EISCONN
+    if (result != -127) {  // -EISCONN
         printf("Expected EISCONN (-127), got: %d\n", result);
         g_results.record_fail(test_name, "Duplicate connection didn't return EISCONN");
         client_socket.close();
