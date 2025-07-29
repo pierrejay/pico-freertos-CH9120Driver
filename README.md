@@ -508,7 +508,14 @@ For detailed information about all configuration parameters, timing constraints,
 ### Prerequisites
 *   Pico-SDK
 *   FreeRTOS Kernel installed (follow steps [here](https://github.com/pierrejay/pico-freertos-setup))
-*   `UartDmaDriver` cloned in your project directory or included as a submodule
+
+### Import into your project
+
+`CH9120Driver` includes `UartDmaDriver` as a submodule so it should be cloned into your project recursively:
+
+```bash
+git clone --recursive https://github.com/pierrejay/pico-freertos-CH9120Driver.git UartDmaDriver
+```
 
 ### CMake Integration
 
